@@ -187,11 +187,10 @@ def run_epoch(session, model, provider, data, eval_op, verbose=False):
 
 
 def main():
-    os.environ["CUDA_VISIBLE_DEVICES"]="0"
     provider = ptb_data_provider()
     provider.status = 'train'
     config = provider.get_config()
-
+    os.environ["CUDA_VISIBLE_DEVICES"]=config['gpu_No']
     eval_config = config.copy()
     eval_config['batch_size'] = 1
     eval_config['num_steps'] = 1
