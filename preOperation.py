@@ -60,6 +60,7 @@ for line in lines:
   #   print(".", end=" ")
   lines[line_num] = " ".join(char_list).encode("utf-8")
   line_num += 1
+word_map["{{R}}"] = 0
 word_map_int = {}
 No = 0
 for word, num in word_map.items():
