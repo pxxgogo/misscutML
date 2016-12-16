@@ -98,7 +98,7 @@ class ptb_data_provider(object):
             assert op.isfile('config.json') and os.access('config.json', os.R_OK)
             config = json.load(open('config.json', 'r'))
             assert 'data_dir' in config and 'model' in config and 'threshold' in config and 'gpu_No' in config
-            self.gpu_No = "/gpu:" + str(config['gpu_No'])
+            self.gpu_No = config['gpu_No']
             self.data_dir = config['data_dir']
             self.model = config['model']
             self.threshold = config['threshold']

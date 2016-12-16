@@ -68,14 +68,14 @@ class PTBModel(object):
         # different than reported in the paper.
 
 
-        with tf.device(config['gpu_No']):
+        with tf.device("/gpu:" + str(config['gpu_No'])):
             lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(size, forget_bias=0.0, state_is_tuple=True)
             if is_training and config['keep_prob'] < 1:
             	lstm_cell = tf.nn.rnn_cell.DropoutWrapper(lstm_cell, output_keep_prob=config['keep_prob'])
             cell = tf.nn.rnn_cell.MultiRNNCell([lstm_cell] * config['num_layers'], state_is_tuple=True)
 
         self._initial_state = cell.zero_state(batch_size, data_type())
-	with tf.device(config['gpu_No']):
+	with tf.device("/gpu:" + str(config['gpu_No'])):
             embedding = tf.get_variable("embedding", [vocab_size, size], dtype=data_type())
             inputs = tf.nn.embedding_lookup(embedding, self._input_data)
 
