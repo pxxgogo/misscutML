@@ -38,7 +38,7 @@ class ptb_data_provider(object):
             'max_grad_norm': 5,
             'num_layers': 2,
             'num_steps': 35,
-            'hidden_size': 650,
+            'hidden_size': 550,
             'max_epoch': 6,
             'max_max_epoch': 39,
             'keep_prob': 0.5,
@@ -97,8 +97,7 @@ class ptb_data_provider(object):
         try:
             assert op.isfile('config.json') and os.access('config.json', os.R_OK)
             config = json.load(open('config.json', 'r'))
-            assert 'data_dir' in config and 'model' in config and 'threshold' in config and 'gpu_No' in config
-            self.gpu_No = config['gpu_No']
+            assert 'data_dir' in config and 'model' in config and 'threshold' in config
             self.data_dir = config['data_dir']
             self.model = config['model']
             self.threshold = config['threshold']
@@ -113,7 +112,6 @@ class ptb_data_provider(object):
             self.data_dir = ''
             self.model = ''
             self.threshold = -1
-            self.gpu_No = 0
             print ("Configure file load failed.")
             cond = False
             while not cond:
@@ -136,10 +134,8 @@ class ptb_data_provider(object):
                     'data_dir': self.data_dir,
                     'model': self.model,
                     'threshold': self.threshold,
-                    'gpu_No': 0
                 }, open('config.json', 'w'))
             self.model_config = ptb_data_provider.model_sample[self.model]
-            self.model_config["gpu_No"] = str(self.gpu_No)
             self.batch_size = self.model_config['batch_size']
             self.num_steps = self.model_config['num_steps']
             print ("OK")
