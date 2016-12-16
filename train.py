@@ -206,8 +206,8 @@ def main():
             mvalid = PTBModel(is_training=False, config=config)
             mtest = PTBModel(is_training=False, config=eval_config)
 
-    	tf.initialize_all_variables().run()
-
+    	session.run(tf.global_variables_initializer())
+        saver = tf.train.Saver()
     	for i in range(config['max_max_epoch']):
             lr_decay = config['lr_decay'] ** max(i - config['max_epoch'], 0.0)
             m.assign_lr(session, config['learning_rate'] * lr_decay)
@@ -217,6 +217,11 @@ def main():
             print("Epoch: %d Train Perplexity: %.3f" % (i + 1, train_perplexity))
             valid_perplexity = run_epoch(session, mvalid, provider, 'valid', tf.no_op())
             print("Epoch: %d Valid Perplexity: %.3f" % (i + 1, valid_perplexity))
+            save_path = saver.save(sess, '/tmp/misscut_rnn_1_model', global_step=i)
+            print("Model saved in file: %s" % save_path)
+            if(i % 5 == 0 and not i == 0):
+                test_perplexity = run_epoch(session, mtest, provider, 'test', tf.no_op())
+                print("Test Perplexity: %.3f" % test_perplexity)
 
     	test_perplexity = run_epoch(session, mtest, provider, 'test', tf.no_op())
     	print("Test Perplexity: %.3f" % test_perplexity)
