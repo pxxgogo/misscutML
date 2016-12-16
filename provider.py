@@ -139,7 +139,7 @@ class ptb_data_provider(object):
                     'gpu_No': 0
                 }, open('config.json', 'w'))
             self.model_config = ptb_data_provider.model_sample[self.model]
-            self.model_config["gpu_No"] = self.gpu_No
+            self.model_config["gpu_No"] = str(self.gpu_No)
             self.batch_size = self.model_config['batch_size']
             self.num_steps = self.model_config['num_steps']
             print ("OK")
