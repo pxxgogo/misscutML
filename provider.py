@@ -38,7 +38,7 @@ class ptb_data_provider(object):
             'max_grad_norm': 5,
             'num_layers': 2,
             'num_steps': 35,
-            'hidden_size': 550,
+            'hidden_size': 650,
             'max_epoch': 6,
             'max_max_epoch': 39,
             'keep_prob': 0.5,
@@ -181,21 +181,39 @@ class ptb_data_provider(object):
         valid_path = op.join(self.data_dir, self.filenames[1])
         test_path = op.join(self.data_dir, self.filenames[2])
         vocab_path = op.join(self.data_dir, self.filenames[3])
-        decoder = lambda x: x.decode('utf-8').replace("\n", "<eos>").split()
         self.vocab = json.load(open(vocab_path, 'r'))
         self.vocab["<eos>"] = len(self.vocab)+1
         self.vocab_nums = self.vocab.values()
+        decoder = lambda x: x.decode('utf-8').replace("\n", str(len(self.vocab))).split()
         with open(train_path, 'r') as training_source:
-            self.training_data = np.array(decoder(training_source.read()))
-            self.training_data = self.training_data[: (len(self.training_data) // self.batch_size) * self.batch_size].reshape((self.batch_size, len(self.training_data) // self.batch_size, ))
+            self.training_data = decoder(training_source.read())
+	    train_data_len = len(self.training_data)
+	    train_batch_len = train_data_len // self.batch_size
+	    data = np.zeros([self.batch_size, train_batch_len], dtype=np.int32)
+	    for i in range(self.batch_size):
+		data[i] = self.training_data[train_batch_len * i: train_batch_len * (i + 1)]
+	    self.training_data = data
+            # self.training_data = self.training_data[: (len(self.training_data) // self.batch_size) * self.batch_size].reshape((self.batch_size, len(self.training_data) // self.batch_size, -1))
 
         with open(valid_path, 'r') as valid_source:
-            self.valid_data = np.array(decoder(valid_source.read()))
-            self.valid_data = self.valid_data[: (len(self.valid_data) // self.batch_size) * self.batch_size].reshape((self.batch_size, len(self.valid_data) // self.batch_size, ))
+            self.valid_data = decoder(valid_source.read())
+	    valid_data_len = len(self.valid_data)
+	    valid_batch_len = valid_data_len // self.batch_size
+	    data = np.zeros([self.batch_size, valid_batch_len], dtype=np.int32)
+	    for i in range(self.batch_size):
+		data[i] = self.valid_data[valid_batch_len * i: valid_batch_len * (i + 1)]
+	    self.valid_data = data
+            # self.valid_data = self.valid_data[: (len(self.valid_data) // self.batch_size) * self.batch_size].reshape((self.batch_size, len(self.valid_data) // self.batch_size, -1))
 
         with open(test_path, 'r') as test_source:
-            self.test_data = np.array(decoder(test_source.read()))
-            self.test_data = self.test_data[: (len(self.test_data) // self.batch_size) * self.batch_size].reshape((self.batch_size, len(self.test_data) // self.batch_size, ))
+            self.test_data = decoder(test_source.read())
+	    test_data_len = len(self.test_data)
+	    test_batch_len = test_data_len // self.batch_size
+	    data = np.zeros([self.batch_size, test_batch_len], dtype=np.int32)
+	    for i in range(self.batch_size):
+		data[i] = self.test_data[test_batch_len * i: test_batch_len * (i + 1)]
+	    self.test_data = data
+            # self.test_data = self.test_data[: (len(self.test_data) // self.batch_size) * self.batch_size].reshape((self.batch_size, len(self.test_data) // self.batch_size, -1))
 
     def get_config(self):
         return self.model_config
@@ -213,26 +231,26 @@ class ptb_data_provider(object):
     def __call__(self):
         self.status = self.status.strip().lower()
         if self.status == 'train':
-            self.yield_pos[0] = (self.yield_pos[0] + 1) % self.training_data.shape[1]
-            epoch_size = (self.training_data.shape[2]) // self.num_steps - 1
-            for i in range(epoch_size):
-                x = self.training_data[:, self.yield_pos[0], i * self.num_steps: (i + 1) * self.num_steps]
-                y = self.training_data[:, self.yield_pos[0], i * self.num_steps + 1: (i + 1) * self.num_steps + 1]
-                yield (x, y)
+            # self.yield_pos[0] = (self.yield_pos[0] + 1) % self.training_data.shape[1]
+	    # i = self.yield_pos[0]
+	    for i in range(self.training_data.shape[1]):
+            	x = self.training_data[:, i * self.num_steps: (i + 1) * self.num_steps]
+            	y = self.training_data[:, i * self.num_steps + 1: (i + 1) * self.num_steps + 1]
+            	yield (x, y)
         elif self.status == 'valid':
-            self.yield_pos[1] = (self.yield_pos[1] + 1) % self.valid_data.shape[1]
-            epoch_size = (self.valid_data.shape[2]) // self.num_steps - 1
-            for i in range(epoch_size):
-                x = self.valid_data[:, self.yield_pos[1], i * self.num_steps: (i + 1) * self.num_steps]
-                y = self.valid_data[:, self.yield_pos[1], i * self.num_steps + 1: (i + 1) * self.num_steps + 1]
-                yield (x, y)
+            # self.yield_pos[1] = (self.yield_pos[1] + 1) % self.valid_data.shape[1]
+	    # i = self.yield_pos[1]
+	    for i in range(self.valid_data.shape[1]):
+            	x = self.valid_data[:, i * self.num_steps: (i + 1) * self.num_steps]
+            	y = self.valid_data[:, i * self.num_steps + 1: (i + 1) * self.num_steps + 1]
+            	yield (x, y)
         else:
-            self.yield_pos[2] = (self.yield_pos[2] + 1) % self.test_data.shape[0]
-            epoch_size = (self.test_data.shape[2]) // self.num_steps - 1
-            for i in range(epoch_size):
-                x = self.test_data[:, self.yield_pos[2], i * self.num_steps: (i + 1) * self.num_steps]
-                y = self.test_data[:, self.yield_pos[2], i * self.num_steps + 1: (i + 1) * self.num_steps + 1]
-                yield (x, y)
+            # self.yield_pos[2] = (self.yield_pos[2] + 1) % self.test_data.shape[0]
+	    # i = self.yield_pos[2]
+	    for i in range(self.test_data.shape[1]):
+            	x = self.test_data[:, i * self.num_steps: (i + 1) * self.num_steps]
+            	y = self.test_data[:, i * self.num_steps + 1: (i + 1) * self.num_steps + 1]
+            	yield (x, y)
 
 if __name__ == "__main__":
     '''
