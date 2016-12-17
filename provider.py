@@ -182,8 +182,9 @@ class ptb_data_provider(object):
         test_path = op.join(self.data_dir, self.filenames[2])
 	vocab_path = op.join(self.data_dir, self.filenames[3])
 
-        decoder = lambda x: x.decode('utf-8').split()
+        decoder = lambda x: x.decode('utf-8').replace("\n", "<eos>").split()
 	self.vocab = json.load(open(vocab_path, 'r'))
+    self.vocab["<eos>"] = len(self.vocab)+1
 	self.vocab_nums = self.vocab.values()
         with open(train_path, 'r') as training_source:
             self.training_data = np.array(decoder(training_source.read()))
