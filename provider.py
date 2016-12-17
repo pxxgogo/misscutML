@@ -180,12 +180,11 @@ class ptb_data_provider(object):
         train_path = op.join(self.data_dir, self.filenames[0])
         valid_path = op.join(self.data_dir, self.filenames[1])
         test_path = op.join(self.data_dir, self.filenames[2])
-	vocab_path = op.join(self.data_dir, self.filenames[3])
-
+        vocab_path = op.join(self.data_dir, self.filenames[3])
         decoder = lambda x: x.decode('utf-8').replace("\n", "<eos>").split()
-	self.vocab = json.load(open(vocab_path, 'r'))
-    self.vocab["<eos>"] = len(self.vocab)+1
-	self.vocab_nums = self.vocab.values()
+        self.vocab = json.load(open(vocab_path, 'r'))
+        self.vocab["<eos>"] = len(self.vocab)+1
+        self.vocab_nums = self.vocab.values()
         with open(train_path, 'r') as training_source:
             self.training_data = np.array(decoder(training_source.read()))
             self.training_data = self.training_data[: (len(self.training_data) // self.batch_size) * self.batch_size].reshape((self.batch_size, len(self.training_data) // self.batch_size, ))
