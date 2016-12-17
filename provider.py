@@ -213,25 +213,25 @@ class ptb_data_provider(object):
     def __call__(self):
         self.status = self.status.strip().lower()
         if self.status == 'train':
-            self.yield_pos[0] = (self.yield_pos[0] + 1) % (self.training_data.shape[0] // self.batch_size)
-            epoch_size = (self.training_data.shape[1]) // self.num_steps - 1
+            self.yield_pos[0] = (self.yield_pos[0] + 1) % self.training_data.shape[1]
+            epoch_size = (self.training_data.shape[2]) // self.num_steps - 1
             for i in range(epoch_size):
-                x = self.training_data[self.yield_pos[0] * self.batch_size: (self.yield_pos[0] + 1) * self.batch_size, i * self.num_steps: (i + 1) * self.num_steps]
-                y = self.training_data[self.yield_pos[0] * self.batch_size: (self.yield_pos[0] + 1) * self.batch_size, i * self.num_steps + 1: (i + 1) * self.num_steps + 1]
+                x = self.training_data[:, self.yield_pos[0], i * self.num_steps: (i + 1) * self.num_steps]
+                y = self.training_data[:, self.yield_pos[0], i * self.num_steps + 1: (i + 1) * self.num_steps + 1]
                 yield (x, y)
         elif self.status == 'valid':
-            self.yield_pos[1] = (self.yield_pos[1] + 1) % (self.valid_data.shape[0] // self.batch_size)
-            epoch_size = (self.valid_data.shape[1]) // self.num_steps - 1
+            self.yield_pos[1] = (self.yield_pos[1] + 1) % self.valid_data.shape[1]
+            epoch_size = (self.valid_data.shape[2]) // self.num_steps - 1
             for i in range(epoch_size):
-                x = self.valid_data[self.yield_pos[1] * self.batch_size: (self.yield_pos[1] + 1) * self.batch_size, i * self.num_steps: (i + 1) * self.num_steps]
-                y = self.valid_data[self.yield_pos[1] * self.batch_size: (self.yield_pos[1] + 1) * self.batch_size, i * self.num_steps + 1: (i + 1) * self.num_steps + 1]
+                x = self.valid_data[:, self.yield_pos[1], i * self.num_steps: (i + 1) * self.num_steps]
+                y = self.valid_data[:, self.yield_pos[1], i * self.num_steps + 1: (i + 1) * self.num_steps + 1]
                 yield (x, y)
         else:
-            self.yield_pos[2] = (self.yield_pos[2] + 1) % (self.test_data.shape[0] // self.batch_size)
-            epoch_size = (self.test_data.shape[1]) // self.num_steps - 1
+            self.yield_pos[2] = (self.yield_pos[2] + 1) % self.test_data.shape[0]
+            epoch_size = (self.test_data.shape[2]) // self.num_steps - 1
             for i in range(epoch_size):
-                x = self.test_data[self.yield_pos[2] * self.batch_size: (self.yield_pos[2] + 1) * self.batch_size, i * self.num_steps: (i + 1) * self.num_steps]
-                y = self.test_data[self.yield_pos[2] * self.batch_size: (self.yield_pos[2] + 1) * self.batch_size, i * self.num_steps + 1: (i + 1) * self.num_steps + 1]
+                x = self.test_data[:, self.yield_pos[2], i * self.num_steps: (i + 1) * self.num_steps]
+                y = self.test_data[:, self.yield_pos[2], i * self.num_steps + 1: (i + 1) * self.num_steps + 1]
                 yield (x, y)
 
 if __name__ == "__main__":
