@@ -216,7 +216,7 @@ def main():
             print("Epoch: %d Train Perplexity: %.3f" % (i + 1, train_perplexity))
             valid_perplexity = run_epoch(session, mvalid, provider, 'valid', tf.no_op())
             print("Epoch: %d Valid Perplexity: %.3f" % (i + 1, valid_perplexity))
-            save_path = saver.save(session, '/tmp/misscut_rnn_0_model', global_step=i)
+            save_path = saver.save(session, '/tmp/misscut_rnn_1_model', global_step=i)
             print("Model saved in file: %s" % save_path)
             if(i % 5 == 0 and not i == 0):
                 test_perplexity = run_epoch(session, mtest, provider, 'test', tf.no_op())

@@ -38,13 +38,13 @@ class ptb_data_provider(object):
             'max_grad_norm': 5,
             'num_layers': 2,
             'num_steps': 35,
-            'hidden_size': 650,
+            'hidden_size': 750,
             'max_epoch': 6,
             'max_max_epoch': 39,
             'keep_prob': 0.5,
             'lr_decay': 0.8,
             'batch_size': 128,
-            'vocab_size': 17000
+            'vocab_size': 8000
         },
         'l': {
             'init_scale': 0.04,
@@ -230,24 +230,25 @@ class ptb_data_provider(object):
 
     def __call__(self):
         self.status = self.status.strip().lower()
+	epoch_size = self.get_epoch_size()
         if self.status == 'train':
             # self.yield_pos[0] = (self.yield_pos[0] + 1) % self.training_data.shape[1]
 	    # i = self.yield_pos[0]
-	    for i in range(self.training_data.shape[1]):
+	    for i in range(epoch_size):
             	x = self.training_data[:, i * self.num_steps: (i + 1) * self.num_steps]
             	y = self.training_data[:, i * self.num_steps + 1: (i + 1) * self.num_steps + 1]
             	yield (x, y)
         elif self.status == 'valid':
             # self.yield_pos[1] = (self.yield_pos[1] + 1) % self.valid_data.shape[1]
 	    # i = self.yield_pos[1]
-	    for i in range(self.valid_data.shape[1]):
+	    for i in range(epoch_size):
             	x = self.valid_data[:, i * self.num_steps: (i + 1) * self.num_steps]
             	y = self.valid_data[:, i * self.num_steps + 1: (i + 1) * self.num_steps + 1]
             	yield (x, y)
         else:
             # self.yield_pos[2] = (self.yield_pos[2] + 1) % self.test_data.shape[0]
 	    # i = self.yield_pos[2]
-	    for i in range(self.test_data.shape[1]):
+	    for i in range(epoch_size):
             	x = self.test_data[:, i * self.num_steps: (i + 1) * self.num_steps]
             	y = self.test_data[:, i * self.num_steps + 1: (i + 1) * self.num_steps + 1]
             	yield (x, y)
