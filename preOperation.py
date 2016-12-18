@@ -86,39 +86,39 @@ for line in sample_lines:
       valid.append(line)
   else:
       test.append(line)
-# lines = []
-# line_num = 0
-# for line in train:
-#   content = line.strip('\n').decode("utf-8")
-#   char_list = content.split(" ")
-#   for i in range(len(char_list)):
-#     if(char_list[i] == ""):
-#       continue
-#     char_list[i] = str(word_map_int[char_list[i]])
-#   train[line_num] = " ".join(char_list).encode("utf-8") + "\n"
-#   line_num += 1
+lines = []
+line_num = 0
+for line in train:
+  content = line.strip('\n').decode("utf-8")
+  char_list = content.split(" ")
+  for i in range(len(char_list)):
+    if(char_list[i] == ""):
+      continue
+    char_list[i] = str(word_map_int[char_list[i]])
+  train[line_num] = " ".join(char_list).encode("utf-8") + "\n"
+  line_num += 1
 
-# line_num = 0
-# for line in test:
-#   content = line.strip('\n').decode("utf-8")
-#   char_list = content.split(" ")
-#   for i in range(len(char_list)):
-#     if(char_list[i] == ""):
-#       continue
-#     char_list[i] = str(word_map_int[char_list[i]])
-#   test[line_num] = " ".join(char_list).encode("utf-8") + "\n"
-#   line_num += 1
+line_num = 0
+for line in test:
+  content = line.strip('\n').decode("utf-8")
+  char_list = content.split(" ")
+  for i in range(len(char_list)):
+    if(char_list[i] == ""):
+      continue
+    char_list[i] = str(word_map_int[char_list[i]])
+  test[line_num] = " ".join(char_list).encode("utf-8") + "\n"
+  line_num += 1
 
-# line_num = 0
-# for line in valid:
-#   content = line.strip('\n').decode("utf-8")
-#   char_list = content.split(" ")
-#   for i in range(len(char_list)):
-#     if(char_list[i] == ""):
-#       continue
-#     char_list[i] = str(word_map_int[char_list[i]])
-#   valid[line_num] = " ".join(char_list).encode("utf-8") + "\n"
-#   line_num += 1
+line_num = 0
+for line in valid:
+  content = line.strip('\n').decode("utf-8")
+  char_list = content.split(" ")
+  for i in range(len(char_list)):
+    if(char_list[i] == ""):
+      continue
+    char_list[i] = str(word_map_int[char_list[i]])
+  valid[line_num] = " ".join(char_list).encode("utf-8") + "\n"
+  line_num += 1
 
 with open(os.path.join(args.output_dir, 'ptb.train.txt'), 'w') as ftrain:
   ftrain.writelines(train)
