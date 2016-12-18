@@ -208,9 +208,9 @@ class ptb_data_provider(object):
         with open(test_path, 'r') as test_source:
             self.test_data = decoder(test_source.read())
 	    test_data_len = len(self.test_data)
-	    test_batch_len = test_data_len // self.batch_size
-	    data = np.zeros([self.batch_size, test_batch_len], dtype=np.int32)
-	    for i in range(self.batch_size):
+	    test_batch_len = test_data_len // 1
+	    data = np.zeros([1, test_batch_len], dtype=np.int32)
+	    for i in range(1):
 		data[i] = self.test_data[test_batch_len * i: test_batch_len * (i + 1)]
 	    self.test_data = data
             # self.test_data = self.test_data[: (len(self.test_data) // self.batch_size) * self.batch_size].reshape((self.batch_size, len(self.test_data) // self.batch_size, -1))
