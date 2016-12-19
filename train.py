@@ -192,6 +192,7 @@ def main():
     config = provider.get_config()
     eval_config = config.copy()
     eval_config['batch_size'] = 1
+    eval_config['num_steps'] = 1
 
     # print (config)
     # print (eval_config)
