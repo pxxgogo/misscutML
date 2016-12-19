@@ -224,7 +224,7 @@ class ptb_data_provider(object):
         elif self.status == 'valid':
             return (self.valid_data.shape[1]) // self.num_steps - 1
         elif self.status == 'test':
-            return (self.test_data.shape[1]) // self.num_steps - 1
+            return (self.test_data.shape[1]) // 1 - 1
         else:
             return None
 
@@ -249,8 +249,8 @@ class ptb_data_provider(object):
             # self.yield_pos[2] = (self.yield_pos[2] + 1) % self.test_data.shape[0]
 	    # i = self.yield_pos[2]
 	    for i in range(epoch_size):
-            	x = self.test_data[:, i * self.num_steps: (i + 1) * self.num_steps]
-            	y = self.test_data[:, i * self.num_steps + 1: (i + 1) * self.num_steps + 1]
+            	x = self.test_data[:, i * 1: (i + 1) * 1]
+            	y = self.test_data[:, i * 1 + 1: (i + 1) * 1 + 1]
             	yield (x, y)
 
 if __name__ == "__main__":
