@@ -63,6 +63,8 @@ for line in lines:
   lines[line_num] = " ".join(char_list).encode("utf-8")
   line_num += 1
 if(only_filter_flag == 1):
+  if not args.output_dir in os.listdir("./"):
+    os.mkdir(args.output_dir)
   with open(os.path.join(args.output_dir, 'filter.txt'), 'w') as output:
     for line in lines:
       output.write(line + "\n")
