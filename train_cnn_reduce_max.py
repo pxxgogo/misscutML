@@ -105,7 +105,7 @@ class PTBModel(object):
         output_channels = 200
         stddev = 0.1
         keep_prob = 0.5
-        size = config[hidden_size]
+        size = config["hidden_size"]
             
         with tf.device("/gpu:0"):
             w1 = tf.Variable(tf.random_normal([filter_size, input_channels, output_channels]))
