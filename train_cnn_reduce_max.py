@@ -2,7 +2,7 @@
 # @Author: yuchen
 # @Date:   2016-12-15 09:51:05
 # @Last Modified by:   yuchen
-# @Last Modified time: 2016-12-15 10:45:53
+# @Last Modified time: 2016-12-26 16:25:10
 
 from __future__ import absolute_import
 from __future__ import division
@@ -31,8 +31,8 @@ provider = None
 config = None
 batch_size = 1024
 num_steps = 35
-size = 200
-vocab_size = 20000
+size = 650
+vocab_size = 8000
 initial_state = None
 final_state = None
 
@@ -50,13 +50,46 @@ lr_update = None
 def data_type():
     return tf.float16 if FLAGS.use_fp16 else tf.float32
 
+
+def weight_variable(shape, stddev=0.1):
+    initial = tf.truncated_normal(shape, stddev=stddev)
+    return tf.Variable(initial)
+
+def bias_variable(shape):
+    initial = tf.constant(0.1, shape=shape)
+    return tf.Variable(initial)
+
+def conv1d(x, W, keep_prob_):
+    #print (x.get_shape())
+    #print (W.shape)
+    conv_1d = tf.nn.conv1d(value=x, filters=W, stride=1, padding='SAME')
+    return tf.nn.dropout(conv_1d, keep_prob_)
+
+class CNN_Cell(object):
+    def __init__(self, w1, b1, w2, b2, keep_prob):
+        self.w1 = w1
+        self.b1 = b1
+        self.w2 = w2
+        self.b2 = b2
+        self.keep_prob = keep_prob
+
+    def __call__(self, x):
+        conv1 = conv1d(x, self.w1, self.keep_prob)
+        h_conv = tf.nn.relu(conv1 + self.b1)
+        mp = tf.reduce_max(h_conv, reduction_indices=[1])
+        print (mp.get_shape())
+        print (self.w2.get_shape())
+        logits = tf.sigmoid(tf.matmul(mp, self.w2) + self.b2)
+        return logits
+
 class PTBModel(object):
     """The PTB model."""
     def __init__(self, is_training, config):
         self.batch_size = batch_size = config['batch_size']
         self.num_steps = num_steps = config['num_steps']
-        size = config['hidden_size']
-        vocab_size = config['vocab_size']
+        self.vocab_size = vocab_size = config['vocab_size']
+        #size = config['hidden_size']
+        #vocab_size = config['vocab_size']
 	# print ("Batch size = {batch_size}. Num steps = {num_steps}.".format(
 	# 	batch_size=batch_size, num_steps=num_steps))
 	# raw_input()
@@ -67,20 +100,37 @@ class PTBModel(object):
         # initialized to 1 but the hyperparameters of the model would need to be
         # different than reported in the paper.
 
-
+        filter_size = 3
+        input_channels = config["hidden_size"]
+        output_channels = 200
+        stddev = 0.1
+        keep_prob = 0.5
+        size = config[hidden_size]
+            
         with tf.device("/gpu:0"):
-            lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(size, forget_bias=0.0, state_is_tuple=True)
-            if is_training and config['keep_prob'] < 1:
-            	lstm_cell = tf.nn.rnn_cell.DropoutWrapper(lstm_cell, output_keep_prob=config['keep_prob'])
-            cell = tf.nn.rnn_cell.MultiRNNCell([lstm_cell] * config['num_layers'], state_is_tuple=True)
+            w1 = tf.Variable(tf.random_normal([filter_size, input_channels, output_channels]))
+            #print (w1.get_shape())
+            #w1 = weight_variable([filter_size, input_channels, output_channels], stddev)
+            #w1 = tf.unpack(w1, axis=0)
+            b1 = bias_variable([output_channels])
+            w2 = tf.Variable(tf.random_normal([output_channels, output_channels]))
+            #w2 = weight_variable([output_channels, output_channels], stddev)
+            b2 = bias_variable([output_channels])
+            #embedding = tf.get_variable("embedding", [vocab_size, input_channels], dtype=data_type())
+            cell = CNN_Cell(w1, b1, w2, b2, keep_prob)
+        
+        #with tf.device("/gpu:0"):
+            #lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(size, forget_bias=0.0, state_is_tuple=True)
+            #if is_training and config['keep_prob'] < 1:
+            #	lstm_cell = tf.nn.rnn_cell.DropoutWrapper(lstm_cell, output_keep_prob=config['keep_prob'])
+            #cell = tf.nn.rnn_cell.MultiRNNCell([lstm_cell] * config['num_layers'], state_is_tuple=True)
 
-        self._initial_state = cell.zero_state(batch_size, data_type())
-        with tf.device("/gpu:0"):
-            embedding = tf.get_variable("embedding", [vocab_size, size], dtype=data_type())
-            inputs = tf.nn.embedding_lookup(embedding, self._input_data)
+        #self._initial_state = cell.zero_state(batch_size, data_type())
+	    #with tf.device("/gpu:0"):
+            #
 
-        if is_training and config['keep_prob'] < 1:
-            inputs = tf.nn.dropout(inputs, config['keep_prob'])
+        #if is_training and config['keep_prob'] < 1:
+            #inputs = tf.nn.dropout(inputs, config['keep_prob'])
 
         # Simplified version of tensorflow.models.rnn.rnn.py's rnn().
         # This builds an unrolled LSTM for tutorial purposes only.
@@ -92,12 +142,33 @@ class PTBModel(object):
         #           for input_ in tf.split(1, num_steps, inputs)]
         # outputs, state = tf.nn.rnn(cell, inputs, initial_state=self._initial_state)
         outputs = []
-        state = self._initial_state
-        with tf.variable_scope("RNN"):
+        #print (self._input_data)
+        #inputs = np.array(self._input_data)
+        #print (inputs.shape)
+        #state = self._initial_state
+        inputs = np.array([[] for i in range(batch_size)])
+        with tf.variable_scope("CNN"):
             for time_step in range(num_steps):
+                #print (inputs.shape)
+                #print (self._input_data.get_shape())
+                #print (self.input_data.get_shape())
+                #print (self._input_data[:, time_step: time_step + 1].get_shape())
+                inputs = tf.concat(1, [inputs, self._input_data[:, time_step: time_step + 1]])
+                # inputs = np.concatenate((inputs, self._input_data[:, time_step]), axis=1)
                 if time_step > 0: tf.get_variable_scope().reuse_variables()
-                (cell_output, state) = cell(inputs[:, time_step, :], state)
+                #cell_output = cell(inputs[:, 0: time_step+1, :])
+                #print (self._input_data.get_shape())
+                #print (inputs.get_shape())
+                tf.Print(inputs, [inputs])
+                embedding = tf.get_variable("embedding", [vocab_size, size], dtype=data_type())
+                x = tf.nn.embedding_lookup(embedding, inputs)
+                print (x.get_shape())
+                cell_output = cell(x)
                 outputs.append(cell_output)
+        print ("Outputs")
+        print (np.array(outputs).shape)
+        print (np.array(outputs))
+        print (list(map(lambda t: np.array(t).shape, outputs)))
 
         output = tf.reshape(tf.concat(1, outputs), [-1, size])
         softmax_w = tf.get_variable(
@@ -216,7 +287,7 @@ def main():
             print("Epoch: %d Train Perplexity: %.3f" % (i + 1, train_perplexity))
             valid_perplexity = run_epoch(session, mvalid, provider, 'valid', tf.no_op())
             print("Epoch: %d Valid Perplexity: %.3f" % (i + 1, valid_perplexity))
-            save_path = saver.save(session, './model/misscut_rnn_1_model', global_step=i)
+            save_path = saver.save(session, '/tmp/misscut_rnn_1_model', global_step=i)
             print("Model saved in file: %s" % save_path)
             if(i % 13 == 0 and not i == 0):
                 test_perplexity = run_epoch(session, mtest, provider, 'test', tf.no_op())
