@@ -110,7 +110,7 @@ class PTBModel(object):
         loss = tf.nn.seq2seq.sequence_loss_by_example(
             [logits],
             [tf.reshape(self._targets, [-1])],
-            [tf.ones([batch_size * num_steps], dtype=data_type())])
+            [tf.ones([batch_size * num_steps * 2], dtype=data_type())])
         self._cost = cost = tf.reduce_sum(loss) / batch_size
 
         self._final_state1 = state1
