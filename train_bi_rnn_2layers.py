@@ -63,7 +63,7 @@ class PTBModel(object):
         # 	batch_size=batch_size, num_steps=num_steps))
         # raw_input()
         self._input_data = tf.placeholder(tf.int32, [batch_size, num_steps])
-        self._targets = tf.placeholder(tf.int32, [batch_size, num_steps])
+        self._targets = tf.placeholder(tf.int32, [batch_size, num_steps * 2])
 
         # Slightly better results can be obtained with forget gate biases
         # initialized to 1 but the hyperparameters of the model would need to be
