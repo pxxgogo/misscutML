@@ -247,6 +247,8 @@ class ptb_data_provider(object):
             for i in range(epoch_size):
                 x = self.valid_data[:, i * self.num_steps: (i + 1) * self.num_steps]
                 y = self.valid_data[:, i * self.num_steps + 1: (i + 1) * self.num_steps + 1]
+                y = np.append(y, self.valid_data[:, (i + 1) * self.num_steps - 1: i * self.num_steps - 1: -1],
+                              axis=1)
                 yield (x, y)
         else:
             # self.yield_pos[2] = (self.yield_pos[2] + 1) % self.test_data.shape[0]
@@ -254,6 +256,7 @@ class ptb_data_provider(object):
             for i in range(epoch_size):
                 x = self.test_data[:, i * 1: (i + 1) * 1]
                 y = self.test_data[:, i * 1 + 1: (i + 1) * 1 + 1]
+                y = np.append(y, self.test_data[:, (i + 1) * 1 - 1: i * 1 - 1])
                 yield (x, y)
 
 
