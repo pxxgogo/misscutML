@@ -79,8 +79,18 @@ class PTBModel(object):
             if is_training and config['keep_prob'] < 1:
                 lstm_cell2 = tf.nn.rnn_cell.DropoutWrapper(lstm_cell2, output_keep_prob=config['keep_prob'])
 
+            lstm_cell3 = tf.nn.rnn_cell.BasicLSTMCell(size, forget_bias=0.0, state_is_tuple=True)
+            if is_training and config['keep_prob'] < 1:
+                lstm_cell3 = tf.nn.rnn_cell.DropoutWrapper(lstm_cell3, output_keep_prob=config['keep_prob'])
+
+            lstm_cell4 = tf.nn.rnn_cell.BasicLSTMCell(size, forget_bias=0.0, state_is_tuple=True)
+            if is_training and config['keep_prob'] < 1:
+                lstm_cell4 = tf.nn.rnn_cell.DropoutWrapper(lstm_cell4, output_keep_prob=config['keep_prob'])
+
         self._initial_state1 = lstm_cell1.zero_state(batch_size, data_type())
         self._initial_state2 = lstm_cell2.zero_state(batch_size, data_type())
+        self._initial_state3 = lstm_cell3.zero_state(batch_size, data_type())
+        self._initial_state4 = lstm_cell4.zero_state(batch_size, data_type())
 
         with tf.device("/gpu:0"):
             embedding = tf.get_variable("embedding", [vocab_size, size], dtype=data_type())
@@ -97,11 +107,19 @@ class PTBModel(object):
         #
         state1 = self._initial_state1
         state2 = self._initial_state2
+        state3 = self._initial_state3
+        state4 = self._initial_state4
         inputs_list = [tf.squeeze(input_, [1])
                        for input_ in tf.split(1, num_steps, inputs)]
 
         outputs, state1, state2 = rnn_op.bidirectional_rnn(lstm_cell1, lstm_cell2, inputs_list, state1, state2,
                                                            dtype=tf.float32)
+        inputs_list2 = [tf.squeeze(input_, [1])
+                        for input_ in tf.split(1, num_steps, outputs)]
+
+        outputs, state3, state4 = rnn_op.bidirectional_rnn(lstm_cell3, lstm_cell4, inputs_list2, state3, state4,
+                                                           dtype=tf.float32)
+
         output = tf.reshape(tf.concat(1, outputs), [-1, size])
         softmax_w = tf.get_variable(
             "softmax_w", [size, vocab_size], dtype=data_type())
@@ -115,6 +133,8 @@ class PTBModel(object):
 
         self._final_state1 = state1
         self._final_state2 = state2
+        self._final_state3 = state3
+        self._final_state4 = state4
 
         if not is_training:
             return
@@ -149,6 +169,14 @@ class PTBModel(object):
         return self._initial_state2
 
     @property
+    def initial_state3(self):
+        return self._initial_state3
+
+    @property
+    def initial_state4(self):
+        return self._initial_state4
+
+    @property
     def cost(self):
         return self._cost
 
@@ -159,6 +187,14 @@ class PTBModel(object):
     @property
     def final_state2(self):
         return self._final_state2
+
+    @property
+    def final_state3(self):
+        return self._final_state3
+
+    @property
+    def final_state4(self):
+        return self._final_state4
 
     @property
     def lr(self):
@@ -177,15 +213,20 @@ def run_epoch(session, model, provider, data, eval_op, verbose=False):
     iters = 0
     state1 = session.run(model.initial_state1)
     state2 = session.run(model.initial_state2)
+    state3 = session.run(model.initial_state3)
+    state4 = session.run(model.initial_state4)
     provider.status = data
     for step, (x, y) in enumerate(provider()):
-        fetches = [model.cost, model.final_state1, model.final_state2, eval_op]
+        fetches = [model.cost, model.final_state1, model.final_state2, model.final_state3, model.final_state4,
+                   eval_op]
         feed_dict = {}
         feed_dict[model.input_data] = x
         feed_dict[model.targets] = y
         feed_dict[model.initial_state1] = state1
         feed_dict[model.initial_state2] = state2
-        cost, state1, state2, _ = session.run(fetches, feed_dict)
+        feed_dict[model.initial_state3] = state3
+        feed_dict[model.initial_state4] = state4
+        cost, state1, state2, state3, state4, _ = session.run(fetches, feed_dict)
         costs += cost
         iters += model.num_steps
 
