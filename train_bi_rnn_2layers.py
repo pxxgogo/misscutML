@@ -18,7 +18,7 @@ from tensorflow.python.ops import rnn as rnn_op
 
 # from pyspin.spin import make_spin, Spin1
 
-from provider import ptb_data_provider
+from provider_bi_rnn import ptb_data_provider
 
 flags = tf.flags
 logging = tf.logging
