@@ -256,7 +256,7 @@ class ptb_data_provider(object):
             for i in range(epoch_size):
                 x = self.test_data[:, i * 1: (i + 1) * 1]
                 y = self.test_data[:, i * 1 + 1: (i + 1) * 1 + 1]
-                y = np.append(y, self.test_data[:, (i + 1) * 1 - 1: i * 1 - 1])
+                y = np.append(y, self.test_data[:, (i + 1) * 1 - 1: i * 1 - 1], axis=1)
                 yield (x, y)
 
 
@@ -268,4 +268,5 @@ if __name__ == "__main__":
     provide.status = 'train'
     for x, y in provide():
         print(x, y)
+        print(y.shape)
         raw_input("Next")
