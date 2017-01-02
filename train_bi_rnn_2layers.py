@@ -114,8 +114,8 @@ class PTBModel(object):
 
         outputs, state1, state2 = rnn_op.bidirectional_rnn(lstm_cell1, lstm_cell2, inputs_list, state1, state2,
                                                            dtype=tf.float32)
-        inputs_list2 = [tf.squeeze(input_, [1])
-                        for input_ in tf.split(1, num_steps, outputs)]
+        inputs_list2 = [tf.squeeze(input_, [0])
+                        for input_ in tf.split(0, num_steps, outputs)]
 
         outputs, state3, state4 = rnn_op.bidirectional_rnn(lstm_cell3, lstm_cell4, inputs_list2, state3, state4,
                                                            dtype=tf.float32)
