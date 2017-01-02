@@ -239,9 +239,7 @@ class ptb_data_provider(object):
                 x = self.training_data[:, i * self.num_steps: (i + 1) * self.num_steps]
                 y = self.training_data[:, i * self.num_steps + 1: (i + 1) * self.num_steps + 1]
                 if i == 0:
-                    y = np.append(y, self.training_data[:, (i + 1) * self.num_steps - 1: i * self.num_steps: -1],
-                                  axis=1)
-                    y = np.append(y, self.training_data[:, 0], axis=1)
+                    y = np.append(y, self.training_data[:, (i + 1) * self.num_steps - 1:: -1], axis=1)
                 else:
                     y = np.append(y, self.training_data[:, (i + 1) * self.num_steps - 1: i * self.num_steps - 1: -1],
                                   axis=1)
@@ -253,9 +251,8 @@ class ptb_data_provider(object):
                 x = self.valid_data[:, i * self.num_steps: (i + 1) * self.num_steps]
                 y = self.valid_data[:, i * self.num_steps + 1: (i + 1) * self.num_steps + 1]
                 if i == 0:
-                    y = np.append(y, self.valid_data[:, (i + 1) * self.num_steps - 1: i * self.num_steps: -1],
+                    y = np.append(y, self.valid_data[:, (i + 1) * self.num_steps - 1:: -1],
                                   axis=1)
-                    y = np.append(y, self.valid_data[:, 0], axis=1)
                 else:
                     y = np.append(y, self.valid_data[:, (i + 1) * self.num_steps - 1: i * self.num_steps - 1: -1],
                                   axis=1)
@@ -267,7 +264,7 @@ class ptb_data_provider(object):
                 x = self.test_data[:, i * 1: (i + 1) * 1]
                 y = self.test_data[:, i * 1 + 1: (i + 1) * 1 + 1]
                 if i == 0:
-                    y = np.append(y, self.test_data[:, 0], axis=1)
+                    y = np.append(y, self.test_data[:, (i + 1) * 1 - 1:: -1], axis=1)
                 else:
                     y = np.append(y, self.test_data[:, (i + 1) * 1 - 1: i * 1 - 1: -1], axis=1)
                 yield (x, y)
