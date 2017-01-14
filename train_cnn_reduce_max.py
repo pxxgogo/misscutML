@@ -19,7 +19,6 @@ import os
 
 from provider import ptb_data_provider
 
-
 flags = tf.flags
 logging = tf.logging
 
@@ -31,7 +30,7 @@ provider = None
 config = None
 batch_size = 1024
 num_steps = 35
-size = 650
+size = 750
 vocab_size = 8000
 initial_state = None
 final_state = None
@@ -55,15 +54,25 @@ def weight_variable(shape, stddev=0.1):
     initial = tf.truncated_normal(shape, stddev=stddev)
     return tf.Variable(initial)
 
+
 def bias_variable(shape):
     initial = tf.constant(0.1, shape=shape)
     return tf.Variable(initial)
 
+
+def conv2d(x, W, keep_prob_):
+    # print (x.get_shape())
+    # print (W.shape)
+    conv_2d = tf.nn.conv2d(x, W, [1, 1, 1, 1], 'SAME', True, data_format="NHWC")
+    return tf.nn.dropout(conv_2d, keep_prob_)
+
+
 def conv1d(x, W, keep_prob_):
-    #print (x.get_shape())
-    #print (W.shape)
+    # print (x.get_shape())
+    # print (W.shape)
     conv_1d = tf.nn.conv1d(value=x, filters=W, stride=1, padding='SAME')
     return tf.nn.dropout(conv_1d, keep_prob_)
+
 
 class CNN_Cell(object):
     def __init__(self, w1, b1, w2, b2, keep_prob):
@@ -74,25 +83,30 @@ class CNN_Cell(object):
         self.keep_prob = keep_prob
 
     def __call__(self, x):
-        conv1 = conv1d(x, self.w1, self.keep_prob)
-        h_conv = tf.nn.relu(conv1 + self.b1)
-        mp = tf.reduce_max(h_conv, reduction_indices=[1])
-        print (mp.get_shape())
-        print (self.w2.get_shape())
+        conv2 = conv2d(x, self.w1, self.keep_prob)
+        h_conv = tf.nn.relu(conv2 + self.b1)
+        mp = tf.reduce_max(h_conv, axis=[2])
+        print(mp.get_shape())
+        # print (mp.get_shape())
+        # print (self.w2.get_shape())
         logits = tf.sigmoid(tf.matmul(mp, self.w2) + self.b2)
+        print(logits.get_shape())
         return logits
+
 
 class PTBModel(object):
     """The PTB model."""
+
     def __init__(self, is_training, config):
         self.batch_size = batch_size = config['batch_size']
         self.num_steps = num_steps = config['num_steps']
         self.vocab_size = vocab_size = config['vocab_size']
-        #size = config['hidden_size']
-        #vocab_size = config['vocab_size']
-	# print ("Batch size = {batch_size}. Num steps = {num_steps}.".format(
-	# 	batch_size=batch_size, num_steps=num_steps))
-	# raw_input()
+        self.hidden_size = size = config['hidden_size']
+        # size = config['hidden_size']
+        # vocab_size = config['vocab_size']
+        # print ("Batch size = {batch_size}. Num steps = {num_steps}.".format(
+        # 	batch_size=batch_size, num_steps=num_steps))
+        # raw_input()
         self._input_data = tf.placeholder(tf.int32, [batch_size, num_steps])
         self._targets = tf.placeholder(tf.int32, [batch_size, num_steps])
 
@@ -101,76 +115,51 @@ class PTBModel(object):
         # different than reported in the paper.
 
         filter_size = 3
-        input_channels = config["hidden_size"]
-        output_channels = 200
+        input_channels = self.hidden_size
+        output_channels = self.hidden_size
         stddev = 0.1
         keep_prob = 0.5
-        size = config["hidden_size"]
-            
-        with tf.device("/gpu:0"):
-            w1 = tf.Variable(tf.random_normal([filter_size, input_channels, output_channels]))
-            #print (w1.get_shape())
-            #w1 = weight_variable([filter_size, input_channels, output_channels], stddev)
-            #w1 = tf.unpack(w1, axis=0)
+
+        with tf.device("/cpu:0"):
+            w1 = tf.Variable(tf.random_normal([1, filter_size, input_channels, output_channels]))
+            # w1 = weight_variable([filter_size, input_channels, output_channels], stddev)
+            # w1 = tf.unpack(w1, axis=0)
             b1 = bias_variable([output_channels])
-            w2 = tf.Variable(tf.random_normal([output_channels, output_channels]))
-            #w2 = weight_variable([output_channels, output_channels], stddev)
+            w2 = tf.Variable(tf.random_normal([self.batch_size, output_channels, output_channels]))
+            # w2 = weight_variable([output_channels, output_channels], stddev)
             b2 = bias_variable([output_channels])
-            #embedding = tf.get_variable("embedding", [vocab_size, input_channels], dtype=data_type())
+            # embedding = tf.get_variable("embedding", [vocab_size, input_channels], dtype=data_type())
             cell = CNN_Cell(w1, b1, w2, b2, keep_prob)
-        
-        #with tf.device("/gpu:0"):
-            #lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(size, forget_bias=0.0, state_is_tuple=True)
-            #if is_training and config['keep_prob'] < 1:
-            #	lstm_cell = tf.nn.rnn_cell.DropoutWrapper(lstm_cell, output_keep_prob=config['keep_prob'])
-            #cell = tf.nn.rnn_cell.MultiRNNCell([lstm_cell] * config['num_layers'], state_is_tuple=True)
 
-        #self._initial_state = cell.zero_state(batch_size, data_type())
-	    #with tf.device("/gpu:0"):
-            #
-
-        #if is_training and config['keep_prob'] < 1:
-            #inputs = tf.nn.dropout(inputs, config['keep_prob'])
-
-        # Simplified version of tensorflow.models.rnn.rnn.py's rnn().
-        # This builds an unrolled LSTM for tutorial purposes only.
-        # In general, use the rnn() or state_saving_rnn() from rnn.py.
-        #
-        # The alternative version of the code below is:
-        #
-        # inputs = [tf.squeeze(input_, [1])
-        #           for input_ in tf.split(1, num_steps, inputs)]
-        # outputs, state = tf.nn.rnn(cell, inputs, initial_state=self._initial_state)
         outputs = []
-        #print (self._input_data)
-        #inputs = np.array(self._input_data)
-        #print (inputs.shape)
-        #state = self._initial_state
+        # print (self._input_data)
+        # inputs = np.array(self._input_data)
+        # print (inputs.shape)
+        # state = self._initial_state
         inputs = np.array([[] for i in range(batch_size)])
+        # print(inputs.shape)
+        model_inputs = tf.zeros([self.batch_size, 0, self.num_steps, self.hidden_size])
+        # print(model_inputs.shape)
         with tf.variable_scope("CNN"):
             for time_step in range(num_steps):
-                #print (inputs.shape)
-                #print (self._input_data.get_shape())
-                #print (self.input_data.get_shape())
-                #print (self._input_data[:, time_step: time_step + 1].get_shape())
                 inputs = tf.concat(1, [inputs, self._input_data[:, time_step: time_step + 1]])
-                # inputs = np.concatenate((inputs, self._input_data[:, time_step]), axis=1)
                 if time_step > 0: tf.get_variable_scope().reuse_variables()
-                #cell_output = cell(inputs[:, 0: time_step+1, :])
-                #print (self._input_data.get_shape())
-                #print (inputs.get_shape())
-                tf.Print(inputs, [inputs])
                 embedding = tf.get_variable("embedding", [vocab_size, size], dtype=data_type())
                 x = tf.nn.embedding_lookup(embedding, inputs)
-                print (x.get_shape())
-                cell_output = cell(x)
-                outputs.append(cell_output)
-        print ("Outputs")
-        print (np.array(outputs).shape)
-        print (np.array(outputs))
-        print (list(map(lambda t: np.array(t).shape, outputs)))
-
-        output = tf.reshape(tf.concat(1, outputs), [-1, size])
+                zeros = tf.zeros([self.batch_size, self.num_steps - time_step - 1, self.hidden_size])
+                x = tf.concat(1, [x, zeros])
+                x = tf.reshape(x, [self.batch_size, 1, self.num_steps, self.hidden_size])
+                # print(x.get_shape())
+                model_inputs = tf.concat(1, [model_inputs, x])
+                # cell_output = cell(x)
+                # outputs.append(cell_output)
+            # print(model_inputs.get_shape())
+            cell_output = cell(model_inputs)
+        # print ("Outputs")
+        # print (np.array(outputs).shape)
+        # print (np.array(outputs))
+        # print (list(map(lambda t: np.array(t).shape, outputs)))
+        output = tf.reshape(tf.concat(0, cell_output), [-1, size])
         softmax_w = tf.get_variable(
             "softmax_w", [size, vocab_size], dtype=data_type())
         softmax_b = tf.get_variable("softmax_b", [vocab_size], dtype=data_type())
@@ -180,24 +169,22 @@ class PTBModel(object):
             [tf.reshape(self._targets, [-1])],
             [tf.ones([batch_size * num_steps], dtype=data_type())])
         self._cost = cost = tf.reduce_sum(loss) / batch_size
-        self._final_state = state
-
         if not is_training:
             return
 
-    	self._lr = tf.Variable(0.0, trainable=False)
-    	tvars = tf.trainable_variables()
-    	grads, _ = tf.clip_by_global_norm(tf.gradients(cost, tvars),
-                                      config['max_grad_norm'])
-    	optimizer = tf.train.GradientDescentOptimizer(self._lr)
-    	self._train_op = optimizer.apply_gradients(zip(grads, tvars))
+        self._lr = tf.Variable(0.0, trainable=False)
+        tvars = tf.trainable_variables()
+        grads, _ = tf.clip_by_global_norm(tf.gradients(cost, tvars),
+                                          config['max_grad_norm'])
+        optimizer = tf.train.GradientDescentOptimizer(self._lr)
+        self._train_op = optimizer.apply_gradients(zip(grads, tvars))
 
-    	self._new_lr = tf.placeholder(tf.float32, shape=[], name="new_learning_rate")
-    	self._lr_update = tf.assign(self._lr, self._new_lr)
+        self._new_lr = tf.placeholder(tf.float32, shape=[], name="new_learning_rate")
+        self._lr_update = tf.assign(self._lr, self._new_lr)
 
     def assign_lr(self, session, lr_value):
         session.run(self._lr_update, feed_dict={self._new_lr: lr_value})
-    
+
     @property
     def input_data(self):
         return self._input_data
@@ -207,16 +194,9 @@ class PTBModel(object):
         return self._targets
 
     @property
-    def initial_state(self):
-        return self._initial_state
-
-    @property
     def cost(self):
         return self._cost
 
-    @property
-    def final_state(self):
-        return self._final_state
 
     @property
     def lr(self):
@@ -227,33 +207,28 @@ class PTBModel(object):
         return self._train_op
 
 
-
 # @make_spin(Spin1, "Running epoch...")
 def run_epoch(session, model, provider, data, eval_op, verbose=False):
     """Runs the model on the given data."""
     start_time = time.time()
     costs = 0.0
     iters = 0
-    state = session.run(model.initial_state)
     provider.status = data
     for step, (x, y) in enumerate(provider()):
-        fetches = [model.cost, model.final_state, eval_op]
+        fetches = [model.cost, eval_op]
         feed_dict = {}
         feed_dict[model.input_data] = x
         feed_dict[model.targets] = y
-        for i, (c, h) in enumerate(model.initial_state):
-            feed_dict[c] = state[i].c
-            feed_dict[h] = state[i].h
-	# print (feed_dict)
-    	cost, state, _ = session.run(fetches, feed_dict)
-    	costs += cost
-    	iters += model.num_steps
+        # print (feed_dict)
+        cost, _ = session.run(fetches, feed_dict)
+        costs += cost
+        iters += model.num_steps
 
-    	epoch_size = provider.get_epoch_size()
-    	if verbose and step % (epoch_size // 10) == 10:
+        epoch_size = provider.get_epoch_size()
+        if verbose and step % (epoch_size // 10) == 10:
             print("%.3f perplexity: %.3f speed: %.0f wps" %
-                (step * 1.0 / epoch_size, np.exp(costs / iters),
-             	iters * model.batch_size / (time.time() - start_time)))
+                  (step * 1.0 / epoch_size, np.exp(costs / iters),
+                   iters * model.batch_size / (time.time() - start_time)))
     return np.exp(costs / iters)
 
 
@@ -270,15 +245,15 @@ def main():
 
     with tf.Graph().as_default(), tf.Session() as session:
         initializer = tf.random_uniform_initializer(-config['init_scale'], config['init_scale'])
-    	with tf.variable_scope("model", reuse=None, initializer=initializer):
+        with tf.variable_scope("model", reuse=None, initializer=initializer):
             m = PTBModel(is_training=True, config=config)
-    	with tf.variable_scope("model", reuse=True, initializer=initializer):
+        with tf.variable_scope("model", reuse=True, initializer=initializer):
             mvalid = PTBModel(is_training=False, config=config)
             mtest = PTBModel(is_training=False, config=eval_config)
 
-    	session.run(tf.global_variables_initializer())
+        session.run(tf.global_variables_initializer())
         saver = tf.train.Saver()
-    	for i in range(config['max_max_epoch']):
+        for i in range(config['max_max_epoch']):
             lr_decay = config['lr_decay'] ** max(i - config['max_epoch'], 0.0)
             m.assign_lr(session, config['learning_rate'] * lr_decay)
             print("Epoch: %d Learning rate: %.3f" % (i + 1, session.run(m.lr)))
@@ -289,12 +264,13 @@ def main():
             print("Epoch: %d Valid Perplexity: %.3f" % (i + 1, valid_perplexity))
             save_path = saver.save(session, './model/misscut_cnn_reduce_max_model', global_step=i)
             print("Model saved in file: %s" % save_path)
-            if(i % 13 == 0 and not i == 0):
+            if (i % 13 == 0 and not i == 0):
                 test_perplexity = run_epoch(session, mtest, provider, 'test', tf.no_op())
                 print("Test Perplexity: %.3f" % test_perplexity)
 
-    	test_perplexity = run_epoch(session, mtest, provider, 'test', tf.no_op())
-    	print("Test Perplexity: %.3f" % test_perplexity)
+        test_perplexity = run_epoch(session, mtest, provider, 'test', tf.no_op())
+        print("Test Perplexity: %.3f" % test_perplexity)
+
 
 if __name__ == "__main__":
     main()
