@@ -184,7 +184,6 @@ class PTBModel(object):
             [tf.reshape(self._targets, [-1])],
             [tf.ones([batch_size * num_steps], dtype=data_type())])
         self._cost = cost = tf.reduce_sum(loss) / batch_size
-        self._final_state = state
 
         if not is_training:
             return
@@ -211,16 +210,8 @@ class PTBModel(object):
         return self._targets
 
     @property
-    def initial_state(self):
-        return self._initial_state
-
-    @property
     def cost(self):
         return self._cost
-
-    @property
-    def final_state(self):
-        return self._final_state
 
     @property
     def lr(self):
@@ -237,18 +228,14 @@ def run_epoch(session, model, provider, data, eval_op, verbose=False):
     start_time = time.time()
     costs = 0.0
     iters = 0
-    state = session.run(model.initial_state)
     provider.status = data
     for step, (x, y) in enumerate(provider()):
-        fetches = [model.cost, model.final_state, eval_op]
+        fetches = [model.cost, eval_op]
         feed_dict = {}
         feed_dict[model.input_data] = x
         feed_dict[model.targets] = y
-        for i, (c, h) in enumerate(model.initial_state):
-            feed_dict[c] = state[i].c
-            feed_dict[h] = state[i].h
         # print (feed_dict)
-        cost, state, _ = session.run(fetches, feed_dict)
+        cost, _ = session.run(fetches, feed_dict)
         costs += cost
         iters += model.num_steps
 
