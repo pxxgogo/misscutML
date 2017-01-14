@@ -1,1 +1,1 @@
-{"threshold": 20, "model": "m", "data_dir": "../corpus_test/"}
+{"threshold": 20, "model": "m", "data_dir": "../filtered_no_char/"}
