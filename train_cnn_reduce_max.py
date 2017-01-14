@@ -120,7 +120,7 @@ class PTBModel(object):
         stddev = 0.1
         keep_prob = 0.5
 
-        with tf.device("/cpu:0"):
+        with tf.device("/gpu:0"):
             w1 = tf.Variable(tf.random_normal([1, filter_size, input_channels, output_channels]))
             # w1 = weight_variable([filter_size, input_channels, output_channels], stddev)
             # w1 = tf.unpack(w1, axis=0)
