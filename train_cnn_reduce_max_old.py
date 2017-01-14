@@ -106,7 +106,7 @@ class PTBModel(object):
 
         filter_size = 3
         input_channels = config["hidden_size"]
-        output_channels = 200
+        output_channels = 750
         stddev = 0.1
         keep_prob = 0.5
         size = config["hidden_size"]
